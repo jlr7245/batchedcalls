@@ -2,43 +2,54 @@ const axios = require('axios');
 
 const urls = require('./urls');
 
-let results = [];
 
-function resolvePromises(arr, obj) {
-    Promise.all(arr).then(res => {
-      results = results.concat(res);
-      if (typeof arr[arr.length - 1] == 'number') {
-        resolvePromises(obj[arr[arr.length - 1]], obj);
-      } else {
-        console.log(results);
-        console.log(results.length);
-      };
-    });
-}
 
-function getUrls(arr) {
+function batchUrls(arr) {
   const result = arr.reduce((acc, val) => {
     if (acc.count % 5) {
-      acc[acc.batch].push(axios.get(val));
+      acc[acc.batch].container.push(val);
       acc.count++;
       return acc;
     } else if (acc.count < acc.total && !(acc.count % 5)) {
-      acc[acc.batch].push(acc.batch + 1);
+      acc[acc.batch].next = acc.batch + 1;
       acc.batch++;
-      acc[acc.batch] = [axios.get(val)];
+      acc[acc.batch] = {
+        container: [val]
+      }
       acc.count++;
       return acc;
     } else {
-      acc[acc.batch].push(null);
+      acc[acc.batch].next = null;
       return acc;
     }
   }, {
     total: arr.length,
-    count: 0,
+    count: 1,
     batch: 0,
-    0: [],
+    0: {
+      container: [],
+    },
   })
-  resolvePromises(result[0], result);
+  getResults(result[0], result, []);
 }
 
-getUrls(urls);
+function getResults(subObj, fullObj, hold) {
+  const promises = subObj.container.map(val => {
+    return axios.get(val);
+  });
+  Promise.all(promises).then(res => {
+    hold = hold.concat(res);
+    if (subObj.next) {
+      getResults(fullObj[subObj.next], fullObj, hold);
+    } else {
+      console.log(hold.map(res => {
+        return ({
+          name: res.data.name,
+          url: res.data.url,
+        })
+      }));
+    }
+  }).catch(err => console.log(err));
+}
+
+console.log(batchUrls(urls));

@@ -27,7 +27,6 @@ module.exports = [
   'http://swapi.co/api/people/28',
   'http://swapi.co/api/people/29',
   'http://swapi.co/api/people/30',
-  'http://swapi.co/api/people/31',
   'http://swapi.co/api/people/32',
   'http://swapi.co/api/people/33',
   'http://swapi.co/api/people/34',
